@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Pixiv Metadata Viewer",
+  "version": "1.0.0",
+  "description": "pixivに掲載された画像のメタデータを表示するChrome機能拡張",
+  "permissions": [
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "https://www.pixiv.net/*",
+    "https://i.pximg.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.pixiv.net/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "meta-badge.css",
+        "meta-panel.css"
+      ],
+      "run_at": "document_idle",
+      "type": "module"
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "pixiv-referrer",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "action": {
+    "default_title": "Pixiv Metadata Viewer"
+  }
+}

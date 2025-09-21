@@ -103,6 +103,12 @@ function renderPanelContent(panel: HTMLElement, metadata: any): void {
   
   if (!promptSection || !originalSection) return;
   
+  // メタデータが見つかるかどうかを判定
+  const hasMetadata = metadata.parsed && metadata.parsed.items && metadata.parsed.items.length > 0;
+  
+  // パネルの透明度を設定
+  panel.style.opacity = hasMetadata ? '1' : '0.5';
+  
   // PNG以外の形式の場合
   if (metadata.isNotPng) {
     promptSection.innerHTML = '<p>PNG以外の画像形式のため、メタデータは表示されません。</p>';
@@ -110,7 +116,12 @@ function renderPanelContent(panel: HTMLElement, metadata: any): void {
     return;
   }
   
-  console.log("メタデータ", metadata.parsed.items);
+  // // metadata.parsed が存在するか確認
+  // if (metadata.parsed && metadata.parsed.items) {
+  //   console.log("メタデータ", metadata.parsed.items);
+  // } else {
+  //   console.log("メタデータが見つかりません");
+  // }
 
   // プロンプト情報を抽出
   const summary = metadata.parsed && metadata.parsed.items ? 

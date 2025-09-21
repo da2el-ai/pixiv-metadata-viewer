@@ -40,7 +40,7 @@ async function fetchMetadata(imageUrls: string[]): Promise<any> {
     throw new Error('画像URLが指定されていません');
   }
 
-  console.log("fetchMetadata", imageUrls);
+  // console.log("fetchMetadata", imageUrls);
 
   // バックグラウンドスクリプトにメッセージを送信
   return new Promise((resolve, reject) => {
@@ -72,7 +72,7 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
     // オリジナル画像URLを取得して出力
     const originalBaseUrl = getOriginalBaseUrl(imgUrl);
     const originalImages: string[] = [];
-    console.log('元の画像URL:', imgUrl);
+    // console.log('元の画像URL:', imgUrl);
     
     if (originalBaseUrl) {
       // 各形式のURLを出力
@@ -81,22 +81,47 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
       });
     }
     
+    // // メタデータバッジを表示（エラーの場合でも表示）
+    // createBadge(imgElement, isPanelFixedState());
+    
     // メタデータ取得
     try {
       const metadata = await fetchMetadata(originalImages);
-      
-      // // メタデータバッジを表示
-      // createBadge(imgElement, isPanelFixedState());
       
       // メタデータパネルを表示
       showPanel(metadata);
       
     } catch (error) {
-      console.log('メタデータ取得エラー:', error);
+      // console.log('メタデータ取得エラー:', error);
+      
+      // エラーの場合でもパネルを表示
+      const errorMetadata = {
+        isNotPng: false,
+        parsed: { items: [] }
+      };
+      
+      // エラーメッセージに基づいて適切なフラグを設定
+      if (error instanceof Error && error.message && error.message.includes('HTTP 404')) {
+        // 画像が見つからない場合
+        errorMetadata.isNotPng = true;
+      }
+      
+      showPanel(errorMetadata);
     }
     
   } catch (error) {
-    console.log('画像処理エラー:', error);
+    // console.log('画像処理エラー:', error);
+    
+    // 画像処理エラーの場合でもパネルを表示
+    const errorMetadata = {
+      isNotPng: true,
+      parsed: { items: [] }
+    };
+    
+    // // メタデータバッジを表示
+    // createBadge(imgElement, isPanelFixedState());
+    
+    showPanel(errorMetadata);
   }
 }
 
@@ -104,18 +129,18 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
  * 初期化
  */
 function initialize(): void {
-  console.log("[PMV] initialize");
+  // console.log("[PMV] initialize");
   // 画像ホバー検出
   document.addEventListener('mouseover', (e) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'IMG') {
       const imgElement = target as HTMLImageElement;
       const imgUrl = imgElement.src;
-      console.log("[PMV] initialize src", imgUrl);
+      // console.log("[PMV] initialize src", imgUrl);
       
       // URLパターンチェック
       if (isTargetImage(imgUrl)) {
-        console.log("[PMV] initialize isTarget");
+        // console.log("[PMV] initialize isTarget");
         // 前のタイマーをクリア
         if (hoverTimer) clearTimeout(hoverTimer);
         

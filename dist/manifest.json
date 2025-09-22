@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pixiv Metadata Viewer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "pixivに掲載された画像のメタデータを表示するChrome機能拡張",
   "permissions": [
     "declarativeNetRequest"

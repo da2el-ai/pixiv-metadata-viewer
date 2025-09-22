@@ -179,6 +179,15 @@ async function fetchAndParseMetadata(url: string): Promise<any> {
 }
 
 /**
+ * 拡張機能アイコンのクリックイベント
+ */
+chrome.action.onClicked.addListener((tab) => {
+  if (tab.id) {
+    chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_PANEL' });
+  }
+});
+
+/**
  * メッセージハンドラ
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

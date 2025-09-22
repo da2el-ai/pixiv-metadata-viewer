@@ -25,6 +25,7 @@ function createPanel(): HTMLElement {
   // パネル要素を作成
   const panel = document.createElement('div');
   panel.className = 'd2-meta-panel';
+  panel.setAttribute('data-position', 'bottom');
   
 //   // ヘッダー部分
 //   const header = document.createElement('div');
@@ -32,23 +33,48 @@ function createPanel(): HTMLElement {
 //   header.style.padding = '0.5em';
 //   header.style.borderBottom = '1px solid #666';
   
-  // リサイズハンドル
-  const resizeHandle = document.createElement('div');
-  resizeHandle.className = 'd2-meta-panel__resize';
-  resizeHandle.innerHTML = '⋯';
-  resizeHandle.title = 'ドラッグしてリサイズ';
-  panel.appendChild(resizeHandle);
-  
+  // リサイズハンドル：上
+  const resizeHandleTop = document.createElement('div');
+  resizeHandleTop.classList.add('d2-meta-panel__resize', 'd2-meta-panel__resize--top');
+  resizeHandleTop.innerHTML = '⋯';
+  resizeHandleTop.title = 'ドラッグしてリサイズ';
+  panel.appendChild(resizeHandleTop);
+
+  // ボタンエリア
+  const navContainer = document.createElement('div');
+  navContainer.className = 'd2-meta-panel__nav-container';
+  panel.appendChild(navContainer);
+
+  // 位置変更ボタン
+  const positionButton = document.createElement('button');
+  positionButton.classList.add('d2-meta-panel__nav-btn', 'd2-meta-panel__nav-btn--position');
+  positionButton.title = '位置変更';
+  positionButton.addEventListener('click', () => {
+    const panel = document.querySelector('.d2-meta-panel');
+    if (panel) {
+      const currentPosition = panel.getAttribute('data-position');
+      if (currentPosition === 'top') {
+        panel.setAttribute('data-position', 'bottom');
+        positionButton.setAttribute('data-position', 'bottom');
+      } else {
+        panel.setAttribute('data-position', 'top');
+        positionButton.setAttribute('data-position', 'top');
+      }
+    }
+  });
+  navContainer.appendChild(positionButton);
+
   // 閉じるボタン
-  const closeButton = document.createElement('div');
-  closeButton.className = 'd2-meta-panel__close';
+  const closeButton = document.createElement('button');
+  closeButton.classList.add('d2-meta-panel__nav-btn', 'd2-meta-panel__nav-btn--close');
   closeButton.textContent = '×';
   closeButton.title = '閉じる';
   closeButton.addEventListener('click', () => {
     unfixPanel();
   });
-  panel.appendChild(closeButton);
-  
+  navContainer.appendChild(closeButton);
+
+
   // コンテンツ部分
   const content = document.createElement('div');
   content.className = 'd2-meta-panel__layout';
@@ -65,28 +91,53 @@ function createPanel(): HTMLElement {
   originalSection.className = 'd2-meta-panel__original';
   originalSection.style.backgroundColor = '#444';
   content.appendChild(originalSection);
-  
+
+  // リサイズハンドル：下
+  const resizeHandleBottom = document.createElement('div');
+  resizeHandleBottom.classList.add('d2-meta-panel__resize', 'd2-meta-panel__resize--bottom');
+  resizeHandleBottom.innerHTML = '⋯';
+  resizeHandleBottom.title = 'ドラッグしてリサイズ';
+  panel.appendChild(resizeHandleBottom);
+
   // リサイズ機能
   let startY = 0;
   let startHeight = 0;
   
-  resizeHandle.addEventListener('mousedown', (e) => {
+  // 上のリサイズハンドル
+  resizeHandleTop.addEventListener('mousedown', (e) => {
     e.preventDefault();
     startY = e.clientY;
     startHeight = parseInt(getComputedStyle(panel).height, 10);
-    document.addEventListener('mousemove', resizePanel);
+    document.addEventListener('mousemove', resizePanelTop);
+    document.addEventListener('mouseup', stopResize);
+  });
+
+  // 下のリサイズハンドル
+  resizeHandleBottom.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startY = e.clientY;
+    startHeight = parseInt(getComputedStyle(panel).height, 10);
+    document.addEventListener('mousemove', resizePanelBottom);
     document.addEventListener('mouseup', stopResize);
   });
   
-  function resizePanel(e: MouseEvent) {
+  function resizePanelTop(e: MouseEvent) {
     const newHeight = startHeight - (e.clientY - startY);
     if (newHeight > 100) {
       panel.style.height = `${newHeight}px`;
     }
   }
-  
+
+  function resizePanelBottom(e: MouseEvent) {
+    const newHeight = startHeight + (e.clientY - startY);
+    if (newHeight > 100) {
+      panel.style.height = `${newHeight}px`;
+    }
+  }
+
   function stopResize() {
-    document.removeEventListener('mousemove', resizePanel);
+    document.removeEventListener('mousemove', resizePanelTop);
+    document.removeEventListener('mousemove', resizePanelBottom);
     document.removeEventListener('mouseup', stopResize);
   }
   

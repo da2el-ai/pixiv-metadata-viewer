@@ -4,11 +4,12 @@
  */
 import { CONFIG } from '../constants';
 // import { createBadge } from './badge';
-import { showPanel, hidePanel, isPanelFixedState } from './panel';
+import { showPanel, hidePanel, isPanelFixedState, unfixPanel, getCurrentMetadata } from './panel';
 
 // 状態管理
 let hoverTimer: number | null = null;
 let currentTarget: HTMLImageElement | null = null;
+let isPanelDisabledByIcon = false; // アイコンによって非表示にされたかどうかのフラグ
 
 console.log("/////////////////// PIXIV-METADATA-VIEWER");
 
@@ -66,6 +67,11 @@ async function fetchMetadata(imageUrls: string[]): Promise<any> {
  * 画像処理のメイン関数
  */
 async function processImage(imgElement: HTMLImageElement): Promise<void> {
+  // アイコンによって非表示にされている場合は処理をスキップ
+  if (isPanelDisabledByIcon) {
+    return;
+  }
+
   try {
     const imgUrl = imgElement.src;
     
@@ -173,3 +179,35 @@ function initialize(): void {
 
 // 初期化実行
 initialize();
+
+/**
+ * 拡張機能アイコンのクリックイベントを処理
+ */
+chrome.runtime.onMessage.addListener((message) => {
+  if (message && message.type === 'TOGGLE_PANEL') {
+    const panel = document.querySelector('.d2-meta-panel');
+    if (panel) {
+      const isShow = panel.getAttribute('data-is-show') === 'true';
+      if (isShow) {
+        // パネルが表示されている場合は非表示にする
+        panel.setAttribute('data-is-show', 'false');
+        // パネルの固定状態も解除
+        if (isPanelFixedState()) {
+          unfixPanel();
+        }
+        // アイコンによって非表示にされたフラグをセット
+        isPanelDisabledByIcon = true;
+      } else {
+        // パネルが非表示の場合は表示する
+        // 現在のメタデータがあれば表示、なければ空のパネルを表示
+        const metadata = getCurrentMetadata() || {
+          isNotPng: false,
+          parsed: { items: [] }
+        };
+        showPanel(metadata, false); // 固定表示しない
+        // アイコンによって非表示にされたフラグを解除
+        isPanelDisabledByIcon = false;
+      }
+    }
+  }
+});

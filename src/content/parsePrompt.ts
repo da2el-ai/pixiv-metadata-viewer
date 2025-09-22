@@ -25,7 +25,7 @@ const extractPromptA1111 = (parameters:any, summary:SummaryData) => {
   if (!parameters || !parameters.text) return;
 
   const params = parameters.text;
-  console.log("[extractPromptA1111]", params);
+  // console.log("[extractPromptA1111]", params);
   const negMatch = params.match(/Negative prompt:\s*([\s\S]*?)(?:\n[A-Z][\w ]+:\s|$)/i);
   if (negMatch) summary.negative = negMatch[1].trim();
 

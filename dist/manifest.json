@@ -3,6 +3,11 @@
   "name": "Pixiv Metadata Viewer",
   "version": "1.1.0",
   "description": "pixivに掲載された画像のメタデータを表示するChrome機能拡張",
+  "icons": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+  },
   "permissions": [
     "declarativeNetRequest"
   ],

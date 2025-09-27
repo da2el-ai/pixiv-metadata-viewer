@@ -15,7 +15,7 @@ export const CONFIG = {
   IMAGE_FORMATS: ['png'],
   
   // ホバー遅延時間（ミリ秒）
-  HOVER_DELAY: 500,
+  HOVER_DELAY: 300,
   
   // パネル非表示遅延時間（ミリ秒）
   HIDE_DELAY: 200

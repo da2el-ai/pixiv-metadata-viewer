@@ -498,12 +498,12 @@ export async function fetchAndParseMetadata(url: string, tabId?: number): Promis
     const urlLower = url.toLowerCase();
     
     if (urlLower.endsWith('.png')) {
-      // まずStableDiffusion Forgeのメタデータを抽出を試みる
-      parsed = await parseStableDiffusionForgeMetadata(buf, tabId);
-      
-      // StableDiffusion Forgeのメタデータが見つからなければNovelAIのメタデータを抽出
-      if (!parsed) {
+      // まずNovelAIのメタデータを抽出を試みる
         parsed = await parsePngAlphaChannel(buf);
+      
+      // NovelAIのメタデータが見つからなければStableDiffusion Forgeのメタデータを抽出
+      if (!parsed) {
+        parsed = await parseStableDiffusionForgeMetadata(buf, tabId);
       }
       
       // どちらも見つからなければテキストチャンクを解析

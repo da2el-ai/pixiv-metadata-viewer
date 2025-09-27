@@ -239,7 +239,7 @@ async function _(s, t) {
   try {
     let e;
     if (s.toLowerCase().endsWith(".png"))
-      e = await v(a, t), e || (e = await R(a)), e || (e = await G(a));
+      e = await R(a), e || (e = await v(a, t)), e || (e = await G(a));
     else
       return {
         ok: !0,

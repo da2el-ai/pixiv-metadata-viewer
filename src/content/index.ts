@@ -4,7 +4,7 @@
  */
 import { CONFIG } from '../constants';
 // import { createBadge } from './badge';
-import { showPanel, hidePanel, isPanelFixedState, unfixPanel, getCurrentMetadata } from './panel';
+import { showPanel, hidePanel, getCurrentMetadata } from './panel';
 
 // 状態管理
 let hoverTimer: number | null = null;
@@ -88,7 +88,7 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
     }
     
     // // メタデータバッジを表示（エラーの場合でも表示）
-    // createBadge(imgElement, isPanelFixedState());
+    // createBadge(imgElement);
     
     // メタデータ取得
     try {
@@ -125,7 +125,7 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
     };
     
     // // メタデータバッジを表示
-    // createBadge(imgElement, isPanelFixedState());
+    // createBadge(imgElement);
     
     showPanel(errorMetadata);
   }
@@ -169,10 +169,7 @@ function initialize(): void {
   //       hoverTimer = null;
   //     }
       
-  //     // パネルが固定されていなければ非表示
-  //     if (!isPanelFixedState()) {
-  //       hidePanel();
-  //     }
+  //     hidePanel();
   //   }
   // });
 }
@@ -192,10 +189,7 @@ chrome.runtime.onMessage.addListener((message) => {
       if (isShow) {
         // パネルが表示されている場合は非表示にする
         panel.setAttribute('data-is-show', 'false');
-        // パネルの固定状態も解除
-        if (isPanelFixedState()) {
-          unfixPanel();
-        }
+        hidePanel();
         // アイコンによって非表示にされたフラグをセット
         isPanelDisabledByIcon = true;
       } else {
@@ -205,7 +199,7 @@ chrome.runtime.onMessage.addListener((message) => {
           isNotPng: false,
           parsed: { items: [] }
         };
-        showPanel(metadata, false); // 固定表示しない
+        showPanel(metadata);
         // アイコンによって非表示にされたフラグを解除
         isPanelDisabledByIcon = false;
       }

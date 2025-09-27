@@ -4,11 +4,9 @@
  */
 import { CONFIG } from '../constants';
 import { escapeHtml } from './utils';
-import { updateBadgeState } from './badge';
 import { extractSummary } from './parsePrompt';
 
 // 状態管理
-let isPanelFixed = false;
 let currentMetadata: any = null;
 let hideTimer: number | null = null;
 
@@ -26,12 +24,6 @@ function createPanel(): HTMLElement {
   const panel = document.createElement('div');
   panel.className = 'd2-meta-panel';
   panel.setAttribute('data-position', 'bottom');
-  
-//   // ヘッダー部分
-//   const header = document.createElement('div');
-//   header.style.display = 'flex';
-//   header.style.padding = '0.5em';
-//   header.style.borderBottom = '1px solid #666';
   
   // リサイズハンドル：上
   const resizeHandleTop = document.createElement('div');
@@ -70,7 +62,7 @@ function createPanel(): HTMLElement {
   closeButton.textContent = '×';
   closeButton.title = '閉じる';
   closeButton.addEventListener('click', () => {
-    unfixPanel();
+    hidePanel();
   });
   navContainer.appendChild(closeButton);
 
@@ -167,13 +159,6 @@ function renderPanelContent(panel: HTMLElement, metadata: any): void {
     return;
   }
   
-  // // metadata.parsed が存在するか確認
-  // if (metadata.parsed && metadata.parsed.items) {
-  //   console.log("メタデータ", metadata.parsed.items);
-  // } else {
-  //   console.log("メタデータが見つかりません");
-  // }
-
   // プロンプト情報を抽出
   const summary = metadata.parsed && metadata.parsed.items ? 
     extractSummary(metadata.parsed.items) : {};
@@ -217,9 +202,7 @@ function renderPanelContent(panel: HTMLElement, metadata: any): void {
 /**
  * パネルを表示
  */
-export function showPanel(metadata: any, isFixed = false): void {
-  // パネルが固定されている場合は更新しない
-  if (isPanelFixed && !isFixed) return;
+export function showPanel(metadata: any): void {
   
   // パネルを作成または取得
   const panel = createPanel();
@@ -237,19 +220,13 @@ export function showPanel(metadata: any, isFixed = false): void {
   panel.setAttribute('data-is-show', 'true');
   
   // 状態更新
-  isPanelFixed = isFixed;
   currentMetadata = metadata;
-  
-  // バッジの状態も更新
-  updateBadgeState(isFixed);
 }
 
 /**
  * パネルを非表示
  */
 export function hidePanel(): void {
-  if (isPanelFixed) return;
-  
   // 非表示タイマーをセット
   if (hideTimer) clearTimeout(hideTimer);
   
@@ -260,30 +237,6 @@ export function hidePanel(): void {
     }
     hideTimer = null;
   }, CONFIG.HIDE_DELAY);
-}
-
-/**
- * パネルを固定
- */
-export function fixPanel(): void {
-  isPanelFixed = true;
-  updateBadgeState(true);
-}
-
-/**
- * パネル固定解除
- */
-export function unfixPanel(): void {
-  isPanelFixed = false;
-  hidePanel();
-  updateBadgeState(false);
-}
-
-/**
- * パネルが固定されているかどうかを取得
- */
-export function isPanelFixedState(): boolean {
-  return isPanelFixed;
 }
 
 /**

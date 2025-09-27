@@ -3,12 +3,12 @@
  * 画像上に表示するメタデータバッジを担当
  */
 import { CONFIG } from '../constants';
-import { showPanel, unfixPanel, isPanelFixedState, getCurrentMetadata } from './panel';
+import { showPanel, getCurrentMetadata } from './panel';
 
 /**
  * メタデータバッジを作成
  */
-export function createBadge(imgElement: HTMLImageElement, isPanelFixed: boolean): HTMLElement {
+export function createBadge(imgElement: HTMLImageElement): HTMLElement {
   // 既存のバッジがあれば削除
   const existingBadge = document.querySelector('.d2-meta-badge');
   if (existingBadge) {
@@ -19,7 +19,7 @@ export function createBadge(imgElement: HTMLImageElement, isPanelFixed: boolean)
   const badge = document.createElement('div');
   badge.className = 'd2-meta-badge';
   badge.textContent = 'META';
-  badge.dataset.active = isPanelFixed ? 'true' : 'false';
+  // badge.dataset.active = isPanelFixed ? 'true' : 'false';
   
   // 画像の位置に合わせて配置
   const rect = imgElement.getBoundingClientRect();
@@ -28,19 +28,6 @@ export function createBadge(imgElement: HTMLImageElement, isPanelFixed: boolean)
   if (imgParent) {
     imgParent.style.position = 'relative';
     imgParent.appendChild(badge);
-    
-    // クリックイベント
-    badge.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (isPanelFixedState()) {
-        unfixPanel();
-      } else {
-        const metadata = getCurrentMetadata();
-        if (metadata) {
-          showPanel(metadata, true);
-        }
-      }
-    });
   }
   
   return badge;

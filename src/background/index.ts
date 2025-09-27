@@ -5,6 +5,210 @@
 import { CONFIG } from '../constants';
 
 /**
+ * デバッグ情報をコンテンツスクリプトに送信
+ */
+function sendDebugInfo(tabId: number | undefined, label: string, data?: any, error?: any): void {
+  if (!tabId) return;
+  
+  chrome.tabs.sendMessage(tabId, {
+    type: 'DEBUG_INFO',
+    label,
+    data,
+    error: error ? (error instanceof Error ? error.message : String(error)) : undefined
+  });
+}
+
+/**
+ * PNGのαチャンネルに埋め込まれたメタデータを抽出
+ * NovelAIなどで使用されるstealth_pngcompフォーマットに対応
+ */
+async function parsePngAlphaChannel(buf: ArrayBuffer, tabId?: number): Promise<any | null> {
+  try {
+    // 画像をデコード
+    const blob = new Blob([buf], { type: 'image/png' });
+    const imgBitmap = await createImageBitmap(blob);
+    
+    // // デバッグ情報を送信
+    // if (tabId) {
+    //   sendDebugInfo(tabId, 'αチャンネル解析開始', {
+    //     width: imgBitmap.width,
+    //     height: imgBitmap.height,
+    //     size: buf.byteLength
+    //   });
+    // }
+    
+    // OffscreenCanvasを作成して画像を描画
+    const canvas = new OffscreenCanvas(imgBitmap.width, imgBitmap.height);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('2Dコンテキストの取得に失敗しました');
+    }
+    
+    ctx.drawImage(imgBitmap, 0, 0);
+    const imageData = ctx.getImageData(0, 0, imgBitmap.width, imgBitmap.height);
+    const pixels = imageData.data;
+    
+    // αチャンネルの最下位ビットを抽出
+    const alphaChannel = new Uint8Array(Math.floor(pixels.length / 4));
+    for (let i = 0; i < pixels.length; i += 4) {
+      alphaChannel[i / 4] = pixels[i + 3] & 1; // αチャンネルの最下位ビット
+    }
+    
+    // // デバッグ情報を送信
+    // if (tabId) {
+    //   sendDebugInfo(tabId, 'αチャンネル抽出完了', {
+    //     alphaChannelLength: alphaChannel.length,
+    //     sampleValues: Array.from(alphaChannel.slice(0, 20)) // 最初の20個の値をサンプルとして送信
+    //   });
+    // }
+    
+    // Pythonの実装に合わせて転置処理を追加
+    // 画像データは行優先で格納されているため、列優先に変換する
+    const width = imgBitmap.width;
+    const height = imgBitmap.height;
+    const transposedAlphaChannel = new Uint8Array(alphaChannel.length);
+    
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        // 転置: (x, y) -> (y, x)
+        transposedAlphaChannel[x * height + y] = alphaChannel[y * width + x];
+      }
+    }
+    
+    // if (tabId) {
+    //   sendDebugInfo(tabId, 'αチャンネル転置完了', {
+    //     sampleValues: Array.from(transposedAlphaChannel.slice(0, 20)) // 最初の20個の値をサンプルとして送信
+    //   });
+    // }
+    
+    // 8ビットごとにバイトにパック
+    // Pythonの実装に合わせて、8の倍数に切り捨て
+    const packedLength = Math.floor(transposedAlphaChannel.length / 8) * 8;
+    const truncatedAlphaChannel = transposedAlphaChannel.slice(0, packedLength);
+    const packedBytes = new Uint8Array(Math.floor(packedLength / 8));
+    
+    for (let i = 0; i < packedBytes.length; i++) {
+      let byte = 0;
+      for (let j = 0; j < 8; j++) {
+        byte |= (truncatedAlphaChannel[i * 8 + j] << (7 - j));
+      }
+      packedBytes[i] = byte;
+    }
+    
+    // if (tabId) {
+    //   sendDebugInfo(tabId, 'バイトパック完了', {
+    //     packedLength: packedBytes.length,
+    //     sampleValues: Array.from(packedBytes.slice(0, 20)) // 最初の20個の値をサンプルとして送信
+    //   });
+    // }
+    
+    // LSBExtractorの実装
+    class LSBExtractor {
+      private data: Uint8Array;
+      private pos: number;
+      
+      constructor(data: Uint8Array) {
+        this.data = data;
+        this.pos = 0;
+      }
+      
+      getNextNBytes(n: number): Uint8Array {
+        const bytes = this.data.slice(this.pos, this.pos + n);
+        this.pos += n;
+        return bytes;
+      }
+      
+      read32BitInteger(): number | null {
+        const bytes = this.getNextNBytes(4);
+        if (bytes.length === 4) {
+          return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+        }
+        return null;
+      }
+    }
+    
+    // メタデータの抽出
+    const reader = new LSBExtractor(packedBytes);
+    
+    // マジックナンバーの確認
+    const magic = "stealth_pngcomp";
+    const magicBytes = reader.getNextNBytes(magic.length);
+    const readMagic = new TextDecoder().decode(magicBytes);
+    
+    // デバッグ情報を送信
+    // if (tabId) {
+    //   sendDebugInfo(tabId, 'マジックナンバー確認', {
+    //     expected: magic,
+    //     actual: readMagic,
+    //     match: magic === readMagic
+    //   });
+    // }
+    
+    if (magic !== readMagic) {
+      // マジックナンバーが一致しない場合はメタデータなし
+      // if (tabId) {
+      //   sendDebugInfo(tabId, 'マジックナンバー不一致', {
+      //     expected: magic,
+      //     actual: readMagic
+      //   });
+      // }
+      return null;
+    }
+    
+    // データ長の読み取り
+    const dataLength = reader.read32BitInteger();
+    if (dataLength === null) {
+      return null;
+    }
+    
+    // JSONデータの読み取り
+    const jsonDataBytes = reader.getNextNBytes(Math.floor(dataLength / 8));
+    
+    // gzip解凍
+    const decompressed = await decompressGzip(jsonDataBytes);
+    const jsonText = new TextDecoder().decode(decompressed);
+    const jsonData = JSON.parse(jsonText);
+    
+    // Commentフィールドが文字列の場合はJSONとして解析
+    if (jsonData.Comment && typeof jsonData.Comment === 'string') {
+      try {
+        jsonData.Comment = JSON.parse(jsonData.Comment);
+      } catch (e) {
+        // 解析に失敗した場合は文字列のまま
+      }
+    }
+    
+    // メタデータをitemsフォーマットに変換して返す
+    const items = Object.entries(jsonData).map(([key, value]) => {
+      return {
+        type: 'tEXt',
+        keyword: key,
+        text: JSON.stringify(value),
+      }
+    });
+
+    return {items: items};
+
+  } catch (e) {
+    // if (tabId) {
+    //   sendDebugInfo(tabId, 'αチャンネルメタデータ抽出エラー', null, e);
+    // }
+    return null;
+  }
+}
+
+/**
+ * gzip圧縮データを解凍
+ */
+async function decompressGzip(data: Uint8Array): Promise<ArrayBuffer> {
+  const blob = new Blob([data as unknown as BlobPart]);
+  const stream = new Response(
+    blob.stream().pipeThrough(new DecompressionStream('gzip'))
+  );
+  return await stream.arrayBuffer();
+}
+
+/**
  * PNG画像のテキストチャンクを解析
  */
 async function parsePngTextChunks(buf: ArrayBuffer): Promise<any> {
@@ -136,7 +340,12 @@ async function inflateToString(u8: Uint8Array): Promise<string> {
 /**
  * 画像からメタデータを取得
  */
-async function fetchAndParseMetadata(url: string): Promise<any> {
+async function fetchAndParseMetadata(url: string, tabId?: number): Promise<any> {
+  // // デバッグ情報を送信
+  // if (tabId) {
+  //   sendDebugInfo(tabId, '画像取得開始', { url });
+  // }
+  
   // 画像を取得
   const res = await fetch(url, {
     // DNRでRefererは強制付与される想定
@@ -146,10 +355,21 @@ async function fetchAndParseMetadata(url: string): Promise<any> {
   });
   
   if (!res.ok) {
+    // if (tabId) {
+    //   sendDebugInfo(tabId, '画像取得失敗', { url, status: res.status });
+    // }
     throw new Error(`画像取得に失敗: HTTP ${res.status}`);
   }
   
   const buf = await res.arrayBuffer();
+  
+  // if (tabId) {
+  //   sendDebugInfo(tabId, '画像取得完了', { 
+  //     url, 
+  //     size: buf.byteLength,
+  //     contentType: res.headers.get('content-type')
+  //   });
+  // }
   
   try {
     // 拡張子に基づいて解析
@@ -157,10 +377,35 @@ async function fetchAndParseMetadata(url: string): Promise<any> {
     const urlLower = url.toLowerCase();
     
     if (urlLower.endsWith('.png')) {
-      parsed = await parsePngTextChunks(buf);
+      // if (tabId) {
+      //   sendDebugInfo(tabId, 'PNG画像の解析開始', { url });
+      // }
+      
+      // まずαチャンネルからメタデータを抽出を試みる
+      parsed = await parsePngAlphaChannel(buf, tabId);
+      
+      if (parsed) {
+        // if (tabId) {
+        //   sendDebugInfo(tabId, 'αチャンネルからメタデータ抽出成功', { 
+        //     itemsCount: parsed.items?.length || 0
+        //   });
+        // }
+      } else {
+        // if (tabId) {
+        //   sendDebugInfo(tabId, 'αチャンネルからメタデータ抽出失敗、テキストチャンク解析に移行');
+        // }
+        // αチャンネルからメタデータが見つからなければテキストチャンクを解析
+        parsed = await parsePngTextChunks(buf);
+        
+        // if (tabId) {
+        //   sendDebugInfo(tabId, 'テキストチャンク解析結果', { 
+        //     success: !!parsed,
+        //     itemsCount: parsed?.items?.length || 0
+        //   });
+        // }
+      }
     } else {
       // PNG以外の形式の場合は何もせず処理を完了
-      console.log('PNG以外の画像を検出しました。処理を完了します。');
       return { 
         ok: true, 
         isNotPng: true,
@@ -172,7 +417,9 @@ async function fetchAndParseMetadata(url: string): Promise<any> {
     // summary の生成部分を削除
     return { ok: true, parsed, bytes: buf.byteLength };
   } catch (e) {
-    console.log('メタデータ解析エラー:', e);
+    // if (tabId) {
+    //   sendDebugInfo(tabId, 'メタデータ解析エラー', null, e);
+    // }
     // エラーが発生しても空の結果を返す
     return { ok: true, parsed: { items: [] }, bytes: buf.byteLength };
   }
@@ -195,16 +442,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     (async () => {
       try {
         const { imageUrls } = message;
+        const tabId = sender.tab?.id;
         
         if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+          if (tabId) {
+            sendDebugInfo(tabId, 'メタデータ取得エラー', null, '有効な画像URLが指定されていません');
+          }
           sendResponse({ success: false, log: '有効な画像URLが指定されていません' });
           return;
         }
         
+        // if (tabId) {
+        //   sendDebugInfo(tabId, 'メタデータ取得開始', { imageUrls });
+        // }
+        
         // 画像URLを順番に試行
         for (const url of imageUrls) {
           try {
-            const metadata = await fetchAndParseMetadata(url);
+            const metadata = await fetchAndParseMetadata(url, tabId);
             sendResponse({ success: true, metadata, url });
             return;
           } catch (err: any) {

@@ -181,9 +181,10 @@ function initialize(): void {
 initialize();
 
 /**
- * 拡張機能アイコンのクリックイベントを処理
+ * メッセージハンドラ
  */
 chrome.runtime.onMessage.addListener((message) => {
+  // パネル表示/非表示の切り替え
   if (message && message.type === 'TOGGLE_PANEL') {
     const panel = document.querySelector('.d2-meta-panel');
     if (panel) {
@@ -208,6 +209,22 @@ chrome.runtime.onMessage.addListener((message) => {
         // アイコンによって非表示にされたフラグを解除
         isPanelDisabledByIcon = false;
       }
+    }
+  }
+  
+  // デバッグ情報の出力
+  if (message && message.type === 'DEBUG_INFO') {
+    // デバッグ情報をコンソールに出力
+    console.log('[PMV Debug]', message.label || 'デバッグ情報:');
+    
+    // データがある場合は詳細を出力
+    if (message.data) {
+      console.log(message.data);
+    }
+    
+    // エラー情報がある場合は出力
+    if (message.error) {
+      console.error('[PMV Error]', message.error);
     }
   }
 });

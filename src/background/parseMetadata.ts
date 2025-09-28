@@ -1,7 +1,7 @@
 /**
  * メタデータの解析を担当するモジュール
  */
-import { sendDebugInfo } from './util';
+import { sendDebugInfo } from './utils';
 
 /**
  * LSBExtractorクラス - バイナリデータからビットを抽出するためのユーティリティ

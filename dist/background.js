@@ -1,6 +1,6 @@
 var U = Object.defineProperty;
-var P = (s, t, n) => t in s ? U(s, t, { enumerable: !0, configurable: !0, writable: !0, value: n }) : s[t] = n;
-var C = (s, t, n) => (P(s, typeof t != "symbol" ? t + "" : t, n), n);
+var R = (s, t, n) => t in s ? U(s, t, { enumerable: !0, configurable: !0, writable: !0, value: n }) : s[t] = n;
+var C = (s, t, n) => (R(s, typeof t != "symbol" ? t + "" : t, n), n);
 class D {
   constructor(t) {
     C(this, "data");
@@ -16,7 +16,7 @@ class D {
     return t.length === 4 ? t[0] << 24 | t[1] << 16 | t[2] << 8 | t[3] : null;
   }
 }
-function S(s, t, n) {
+function E(s, t, n) {
   const a = new Uint8Array(Math.floor(s.length / 4));
   for (let o = 0; o < s.length; o += 4)
     a[o / 4] = s[o + 3] & 1;
@@ -32,14 +32,14 @@ function A(s, t, n, a = !1) {
   if (a)
     for (let c = 0; c < t; c++)
       for (let i = 0; i < n; i++) {
-        const l = (i * t + c) * 4;
-        e[o++] = s[l] & 1, e[o++] = s[l + 1] & 1, e[o++] = s[l + 2] & 1;
+        const d = (i * t + c) * 4;
+        e[o++] = s[d] & 1, e[o++] = s[d + 1] & 1, e[o++] = s[d + 2] & 1;
       }
   else
     for (let c = 0; c < n; c++)
       for (let i = 0; i < t; i++) {
-        const l = (c * t + i) * 4;
-        e[o++] = s[l] & 1, e[o++] = s[l + 1] & 1, e[o++] = s[l + 2] & 1;
+        const d = (c * t + i) * 4;
+        e[o++] = s[d] & 1, e[o++] = s[d + 1] & 1, e[o++] = s[d + 2] & 1;
       }
   return e;
 }
@@ -53,7 +53,7 @@ function T(s) {
   }
   return a;
 }
-function L(s) {
+function k(s) {
   const t = [
     { magic: "stealth_pngcomp", format: "alpha", compressed: !0 },
     { magic: "stealth_pnginfo", format: "alpha", compressed: !1 },
@@ -71,7 +71,7 @@ async function N(s) {
     t.stream().pipeThrough(new DecompressionStream("gzip"))
   ).arrayBuffer();
 }
-async function E(s) {
+async function S(s) {
   if (typeof DecompressionStream == "function")
     try {
       const t = new Blob([s]), a = await new Response(
@@ -89,13 +89,13 @@ async function E(s) {
     }
   throw new Error("DecompressionStream未対応のため圧縮テキストを展開できません");
 }
-async function R(s) {
+async function v(s) {
   try {
     const t = new Blob([s], { type: "image/png" }), n = await createImageBitmap(t), e = new OffscreenCanvas(n.width, n.height).getContext("2d");
     if (!e)
       throw new Error("2Dコンテキストの取得に失敗しました");
     e.drawImage(n, 0, 0);
-    const c = e.getImageData(0, 0, n.width, n.height).data, i = S(c, n.width, n.height), l = T(i), f = new D(l), r = "stealth_pngcomp", d = f.getNextNBytes(r.length), m = new TextDecoder().decode(d);
+    const c = e.getImageData(0, 0, n.width, n.height).data, i = E(c, n.width, n.height), d = T(i), f = new D(d), r = "stealth_pngcomp", l = f.getNextNBytes(r.length), m = new TextDecoder().decode(l);
     if (r !== m)
       return null;
     const h = f.read32BitInteger();
@@ -116,15 +116,15 @@ async function R(s) {
     return null;
   }
 }
-async function v(s, t) {
+async function P(s, t) {
   try {
     const n = new Blob([s], { type: "image/png" }), a = await createImageBitmap(n), o = new OffscreenCanvas(a.width, a.height).getContext("2d");
     if (!o)
       throw new Error("2Dコンテキストの取得に失敗しました");
     o.drawImage(a, 0, 0);
-    const i = o.getImageData(0, 0, a.width, a.height).data, l = a.width, f = a.height;
+    const i = o.getImageData(0, 0, a.width, a.height).data, d = a.width, f = a.height;
     let r = null;
-    const d = S(i, l, f), m = T(d), h = new D(m), B = L(h);
+    const l = E(i, d, f), m = T(l), h = new D(m), B = k(h);
     if (B.isValid) {
       const u = h.read32BitInteger();
       if (u !== null) {
@@ -137,7 +137,7 @@ async function v(s, t) {
       }
     }
     if (r === null) {
-      const u = A(i, l, f), p = T(u), g = new D(p), x = L(g);
+      const u = A(i, d, f), p = T(u), g = new D(p), x = k(g);
       if (x.isValid) {
         const w = g.read32BitInteger();
         if (w !== null) {
@@ -149,12 +149,12 @@ async function v(s, t) {
             r = new TextDecoder().decode(y);
         }
       } else {
-        const w = A(i, l, f, !0), y = T(w), b = new D(y), k = L(b);
-        if (k.isValid) {
+        const w = A(i, d, f, !0), y = T(w), b = new D(y), L = k(b);
+        if (L.isValid) {
           const M = b.read32BitInteger();
           if (M !== null) {
             const I = b.getNextNBytes(Math.floor(M / 8));
-            if (k.isCompressed) {
+            if (L.isCompressed) {
               const O = await N(I);
               r = new TextDecoder().decode(O);
             } else
@@ -176,37 +176,37 @@ async function v(s, t) {
     return null;
   }
 }
-async function G(s) {
+async function _(s) {
   const t = new Uint8Array(s), n = new DataView(s), a = [137, 80, 78, 71, 13, 10, 26, 10];
-  for (let l = 0; l < 8; l++)
-    if (t[l] !== a[l])
+  for (let d = 0; d < 8; d++)
+    if (t[d] !== a[d])
       throw new Error("PNG署名が一致しません");
   let e = 8;
   const o = new TextDecoder("latin1"), c = new TextDecoder(), i = [];
   for (; e + 8 <= n.byteLength; ) {
-    const l = n.getUint32(e);
+    const d = n.getUint32(e);
     if (e += 4, e + 4 > n.byteLength)
       break;
     const f = String.fromCharCode(t[e], t[e + 1], t[e + 2], t[e + 3]);
-    if (e += 4, e + l + 4 > n.byteLength)
+    if (e += 4, e + d + 4 > n.byteLength)
       break;
-    const r = t.slice(e, e + l);
-    e += l, n.getUint32(e), e += 4;
+    const r = t.slice(e, e + d);
+    e += d, n.getUint32(e), e += 4;
     try {
       if (f === "tEXt") {
-        const d = r.indexOf(0), m = o.decode(r.slice(0, d)), h = o.decode(r.slice(d + 1));
+        const l = r.indexOf(0), m = o.decode(r.slice(0, l)), h = o.decode(r.slice(l + 1));
         i.push({ type: f, keyword: m, text: h });
       } else if (f === "iTXt") {
-        let d = 0;
-        const m = r.indexOf(0, d), h = o.decode(r.slice(d, m));
-        d = m + 1;
-        const B = r[d++], u = r[d++], p = r.indexOf(0, d), g = o.decode(r.slice(d, p));
-        d = p + 1;
-        const x = r.indexOf(0, d), w = c.decode(r.slice(d, x));
-        d = x + 1;
-        const y = r.slice(d);
+        let l = 0;
+        const m = r.indexOf(0, l), h = o.decode(r.slice(l, m));
+        l = m + 1;
+        const B = r[l++], u = r[l++], p = r.indexOf(0, l), g = o.decode(r.slice(l, p));
+        l = p + 1;
+        const x = r.indexOf(0, l), w = c.decode(r.slice(l, x));
+        l = x + 1;
+        const y = r.slice(l);
         let b;
-        B === 1 ? b = await E(y) : b = c.decode(y), i.push({
+        B === 1 ? b = await S(y) : b = c.decode(y), i.push({
           type: f,
           keyword: h,
           text: b,
@@ -215,18 +215,18 @@ async function G(s) {
           compMethod: u
         });
       } else if (f === "zTXt") {
-        const d = r.indexOf(0), m = o.decode(r.slice(0, d)), h = r[d + 1], B = r.slice(d + 2), u = await E(B);
+        const l = r.indexOf(0), m = o.decode(r.slice(0, l)), h = r[l + 1], B = r.slice(l + 2), u = await S(B);
         i.push({ type: f, keyword: m, text: u, compMethod: h });
       }
-    } catch (d) {
-      i.push({ type: f, keyword: "parse-error", text: String(d) });
+    } catch (l) {
+      i.push({ type: f, keyword: "parse-error", text: String(l) });
     }
     if (f === "IEND")
       break;
   }
   return { items: i };
 }
-async function _(s, t) {
+async function G(s, t) {
   const n = await fetch(s, {
     // DNRでRefererは強制付与される想定
     credentials: "omit",
@@ -239,7 +239,7 @@ async function _(s, t) {
   try {
     let e;
     if (s.toLowerCase().endsWith(".png"))
-      e = await R(a), e || (e = await v(a, t)), e || (e = await G(a));
+      e = await v(a), e || (e = await P(a, t)), e || (e = await _(a));
     else
       return {
         ok: !0,
@@ -260,9 +260,6 @@ function V(s, t, n, a) {
     error: a ? a instanceof Error ? a.message : String(a) : void 0
   });
 }
-chrome.action.onClicked.addListener((s) => {
-  s.id && chrome.tabs.sendMessage(s.id, { type: "TOGGLE_PANEL" });
-});
 chrome.runtime.onMessage.addListener((s, t, n) => {
   if (s && s.type === "GET_METADATA")
     return (async () => {
@@ -275,7 +272,7 @@ chrome.runtime.onMessage.addListener((s, t, n) => {
         }
         for (const c of e)
           try {
-            const i = await _(c, o);
+            const i = await G(c, o);
             n({ success: !0, metadata: i, url: c });
             return;
           } catch (i) {

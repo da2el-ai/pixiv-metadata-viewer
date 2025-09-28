@@ -4,16 +4,9 @@
  */
 import { CONFIG } from '../constants';
 import { fetchAndParseMetadata } from './parseMetadata';
-import { sendDebugInfo } from './util';
+import { sendDebugInfo } from './utils';
 
-/**
- * 拡張機能アイコンのクリックイベント
- */
-chrome.action.onClicked.addListener((tab) => {
-  if (tab.id) {
-    chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_PANEL' });
-  }
-});
+// ポップアップはmanifest.jsonで指定するため、onClickedイベントは不要
 
 /**
  * メッセージハンドラ

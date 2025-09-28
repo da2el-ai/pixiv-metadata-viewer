@@ -5,6 +5,7 @@
 import { CONFIG } from '../constants';
 import { createBadge } from './badge';
 import { showPanel, hidePanel, getCurrentMetadata } from './panel';
+import { loadSettings, getCurrentSettings, saveSettings, Settings } from './settings';
 
 // 状態管理
 let hoverTimer: number | null = null;
@@ -280,10 +281,55 @@ function checkImagesAndAddBadges(): void {
 // DOM変更を監視するためのタイマーID
 let mutationDebounceTimer: number | null = null;
 
+// MutationObserverのインスタンス
+let observer: MutationObserver | null = null;
+
+// 手動チェックボタンの要素
+let checkButton: HTMLElement | null = null;
+
+/**
+ * 設定を適用する
+ */
+function applySettings(settings: Settings): void {
+  // メタデータ表示機能の設定を適用
+  if (settings.enableMetadataDisplay) {
+    // メタデータ表示を有効化
+    isPanelDisabledByIcon = false;
+  } else {
+    // メタデータ表示を無効化
+    isPanelDisabledByIcon = true;
+    hidePanel();
+  }
+  
+  // 全画像一括チェックの設定を適用
+  // 'auto': 自動でチェック（デフォルト）
+  // 'disabled': 自動チェックを無効
+  // 'manual': 手動ボタンを表示
+  if (settings.bulkCheckMode === 'disabled') {
+    // 自動チェックを無効化
+    disableMutationObserver();
+    hideCheckButton();
+  } else if (settings.bulkCheckMode === 'manual') {
+    // 手動ボタンを表示
+    disableMutationObserver();
+    showCheckButton();
+  } else {
+    // 自動でチェック（デフォルト）
+    setupMutationObserver();
+    hideCheckButton();
+  }
+}
+
 /**
  * DOM変更を監視するMutationObserverの設定
  */
 function setupMutationObserver(): void {
+  // 既存のObserverがあれば切断
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+  
   // MutationObserverのコールバック
   const mutationCallback = (mutations: MutationRecord[]) => {
     // 変更があった場合、遅延処理を行う
@@ -299,7 +345,7 @@ function setupMutationObserver(): void {
   };
   
   // MutationObserverの設定
-  const observer = new MutationObserver(mutationCallback);
+  observer = new MutationObserver(mutationCallback);
   
   // 監視オプション
   const config = {
@@ -310,21 +356,104 @@ function setupMutationObserver(): void {
   // bodyの変更を監視開始
   observer.observe(document.body, config);
   
-  // console.log("[PMV] MutationObserver設定完了");
+  console.log("[PMV] MutationObserver設定完了");
+}
+
+/**
+ * MutationObserverを無効化
+ */
+function disableMutationObserver(): void {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+    console.log("[PMV] MutationObserver無効化");
+  }
+}
+
+/**
+ * 手動チェックボタンを作成
+ */
+function createCheckButton(): HTMLElement {
+  // 既存のボタンがあれば削除
+  if (checkButton) {
+    checkButton.remove();
+    checkButton = null;
+  }
+  
+  // ボタン要素を作成
+  const button = document.createElement('div');
+  button.className = 'd2-meta-checkbtn';
+  button.title = '全画像をチェック';
+
+  const iconUrl = chrome.runtime.getURL('img/icon.svg');
+  button.style.backgroundImage = `url("${iconUrl}")`;
+  
+  // クリックイベントを設定
+  button.addEventListener('click', () => {
+    checkImagesAndAddBadges();
+  });
+  
+  // bodyに追加
+  document.body.appendChild(button);
+  
+  return button;
+}
+
+/**
+ * 手動チェックボタンを表示
+ */
+function showCheckButton(): void {
+  if (!checkButton) {
+    checkButton = createCheckButton();
+  }
+  checkButton.style.display = 'block';
+}
+
+/**
+ * 手動チェックボタンを非表示
+ */
+function hideCheckButton(): void {
+  if (checkButton) {
+    checkButton.style.display = 'none';
+  }
 }
 
 /**
  * 初期化
  */
-function initialize(): void {
+async function initialize(): Promise<void> {
   console.log("[PMV] initialize");
 
-  // ページ内の画像をチェックしてバッジを付ける
+  // 設定を読み込む
+  await loadSettings();
+  
+  // 設定変更イベントのリスナーを設定
+  document.addEventListener('d2-settings-changed', (e: Event) => {
+    const settings = (e as CustomEvent<Settings>).detail;
+    applySettings(settings);
+  });
+
+  // 現在の設定を適用
+  applySettings(getCurrentSettings());
+
+  // 設定に応じた初期化処理
   setTimeout(() => {
-    checkImagesAndAddBadges();
+    const settings = getCurrentSettings();
     
-    // 初回チェック後にMutationObserverを設定
-    setupMutationObserver();
+    // 全画像一括チェックの設定に応じた処理
+    if (settings.bulkCheckMode === 'disabled') {
+      // 自動チェックを無効化
+      console.log("[PMV] 自動チェック無効モード");
+    } else if (settings.bulkCheckMode === 'manual') {
+      // 手動ボタンを表示
+      console.log("[PMV] 手動チェックモード");
+    } else {
+      // 自動でチェック（デフォルト）
+      console.log("[PMV] 自動チェックモード");
+      checkImagesAndAddBadges();
+      // 初回チェック後にMutationObserverを設定
+      setupMutationObserver();
+    }
   }, 1000);
 
   // 画像ホバー検出
@@ -371,8 +500,28 @@ initialize();
 /**
  * メッセージハンドラ
  */
-chrome.runtime.onMessage.addListener((message) => {
-  // パネル表示/非表示の切り替え
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  
+  // 設定の更新
+  if (message && message.type === 'UPDATE_SETTINGS') {
+    const settings = getCurrentSettings();
+    
+    if (message.setting === 'enableMetadataDisplay') {
+      settings.enableMetadataDisplay = message.value;
+    } else if (message.setting === 'bulkCheckMode') {
+      settings.bulkCheckMode = message.value;
+    }
+    
+    // 設定を保存
+    saveSettings(settings);
+    
+    // 設定変更イベントを発火
+    document.dispatchEvent(new CustomEvent('d2-settings-changed', { detail: settings }));
+    
+    return true;
+  }
+  
+  // パネル表示/非表示の切り替え（旧機能）
   if (message && message.type === 'TOGGLE_PANEL') {
     const panel = document.querySelector('.d2-meta-panel');
     if (panel) {

@@ -1,14 +1,15 @@
 {
   "name": "pixiv-metadata-viewer",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "pixivに掲載された画像のメタデータを表示するChrome機能拡張",
   "scripts": {
     "dev": "vite",
     "build": "npm run clean && npm run build:all && node scripts/copy-public.js",
-    "build:all": "npm run build:content && npm run build:background && npm run build:styles",
+    "build:all": "npm run build:content && npm run build:background && npm run build:styles && npm run build:popup",
     "build:content": "tsc && vite build --config vite.content.config.ts",
     "build:background": "tsc && vite build --config vite.background.config.ts",
     "build:styles": "vite build --config vite.styles.config.ts",
+    "build:popup": "tsc && vite build --config vite.popup.config.ts",
     "clean": "rm -rf dist && mkdir dist",
     "preview": "vite preview"
   },

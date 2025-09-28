@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Pixiv Metadata Viewer 設定</title>
+    <style>
+      html {
+        font-size: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+        font-size: 1rem;
+        width: 300px;
+      }
+
+      .d2-meta-settings {
+        display: flex;
+        flex-direction: column;
+        gap: .8rem;
+        width: 100%;
+        background-color: #fff;
+        color: #333;
+        overflow: hidden;
+        padding: 1rem;
+      }
+
+      .d2-meta-settings__item {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .d2-meta-settings__item.d2-meta-settings__item--horizontal {
+        justify-content: space-between;
+      }
+
+      .d2-meta-settings__item.d2-meta-settings__item--vertical {
+        flex-direction: column;
+      }
+
+      .d2-meta-settings__item label {
+        display: block;
+        font-weight: 500;
+      }
+
+      .d2-meta-settings__item select {
+        width: 100%;
+        padding: .5rem .8rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #fff;
+      }
+
+      .d2-meta-settings__item select:focus {
+        outline: none;
+        border-color: #00aef1;
+      }
+
+      /* スライドスイッチスタイル */
+      .d2-meta-settings__switch {
+        --switch-width: 2rem;
+        --switch-size: 1rem;
+        --switch-padding: 3px;
+
+        position: relative;
+        display: inline-block;
+        width: calc(var(--switch-width) + (var(--switch-padding) * 2));
+        height: calc(var(--switch-size) + (var(--switch-padding) * 2));
+      }
+
+      .d2-meta-settings__switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: calc((var(--switch-size) * 0.5) + var(--switch-padding));
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: var(--switch-size);
+        width: var(--switch-size);
+        left: var(--switch-padding);
+        bottom: var(--switch-padding);
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: #00aef1;
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px #00aef1;
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(calc(var(--switch-width) - var(--switch-size)));
+      }
+    </style>
+  </head>
+  <body>
+    <div class="d2-meta-settings">
+      <div class="d2-meta-settings__item d2-meta-settings__item--horizontal">
+        <label>メタデータ表示機能</label>
+        <label class="d2-meta-settings__switch">
+          <input type="checkbox" id="enableMetadataDisplay" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="d2-meta-settings__item d2-meta-settings__item--vertical">
+        <label>全画像一括チェック</label>
+        <select id="bulkCheckMode">
+          <option value="auto" selected>自動でチェック</option>
+          <option value="disabled">自動チェックを無効</option>
+          <option value="manual">手動ボタンを表示</option>
+        </select>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

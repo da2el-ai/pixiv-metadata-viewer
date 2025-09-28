@@ -24,3 +24,4 @@ yarn-error.log*
 .sample/
 memory-bank/
 dist/_metadata/generated_indexed_rulesets
+icon-assets

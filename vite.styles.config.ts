@@ -9,7 +9,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         'meta-badge': resolve(__dirname, 'src/scss/meta-badge.scss'),
-        'meta-panel': resolve(__dirname, 'src/scss/meta-panel.scss')
+        'meta-panel': resolve(__dirname, 'src/scss/meta-panel.scss'),
+        'meta-settings': resolve(__dirname, 'src/scss/meta-settings.scss'),
+        'meta-checkbtn': resolve(__dirname, 'src/scss/meta-checkbtn.scss')
       },
       output: {
         assetFileNames: '[name].[ext]'

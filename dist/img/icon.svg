@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_レイヤー_2" data-name="レイヤー 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512">
+  <defs>
+    <style>
+      .cls-1 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-2 {
+        fill: none;
+      }
+
+      .cls-2, .cls-3, .cls-4 {
+        stroke-width: 0px;
+      }
+
+      .cls-3 {
+        fill: #fff;
+        fill-rule: evenodd;
+      }
+
+      .cls-4 {
+        fill: #0296fa;
+      }
+    </style>
+    <clipPath id="clippath">
+      <path id="P" class="cls-2" d="m132.32,443.55h90.15v-124.4h43.82c79.07,0,148.08-39.29,148.08-128.43s-67.99-121.89-150.59-121.89h-131.45v374.72Zm90.15-195.42v-108.29h36.77c43.31,0,67.49,13.1,67.49,50.87s-21.15,57.42-64.97,57.42h-39.29Z"/>
+    </clipPath>
+  </defs>
+  <g id="_レイヤー_1-2" data-name="レイヤー 1">
+    <g id="icon">
+      <rect class="cls-4" width="512" height="512"/>
+      <g class="cls-1">
+        <g>
+          <path class="cls-3" d="m90,69h356v47.68H90v-47.68Z"/>
+          <path class="cls-3" d="m90,134.46h356v47.68H90v-47.68Z"/>
+          <path class="cls-3" d="m90,199.93h356v47.68H90v-47.68Z"/>
+          <path class="cls-3" d="m90,265.39h356v47.68H90v-47.68Z"/>
+          <path class="cls-3" d="m90,330.85h356v47.68H90v-47.68Z"/>
+          <path class="cls-3" d="m90,396.31h356v47.68H90v-47.68Z"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

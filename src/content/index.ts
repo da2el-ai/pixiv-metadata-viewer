@@ -17,6 +17,7 @@ interface CheckedImage {
   url: string;           // 画像URL
   hasMetadata: boolean;  // メタデータの有無
   baseUrl: string | null; // オリジナル画像のベースURL
+  metadata?: any;        // メタデータオブジェクト自体（追加）
 }
 const checkedImages: Map<string, CheckedImage> = new Map();
 
@@ -43,6 +44,21 @@ function getOriginalBaseUrl(imgUrl: string): string | null {
 }
 
 /**
+ * オリジナル画像URLの配列を準備する
+ */
+function prepareOriginalImageUrls(originalBaseUrl: string | null): string[] {
+  const originalImages: string[] = [];
+  
+  if (originalBaseUrl) {
+    CONFIG.IMAGE_FORMATS.forEach(format => {
+      originalImages.push(`${originalBaseUrl}.${format}`);
+    });
+  }
+  
+  return originalImages;
+}
+
+/**
  * メタデータ取得処理
  */
 async function fetchMetadata(imageUrls: string[]): Promise<any> {
@@ -50,7 +66,7 @@ async function fetchMetadata(imageUrls: string[]): Promise<any> {
     throw new Error('画像URLが指定されていません');
   }
 
-  // console.log("fetchMetadata", imageUrls);
+  console.log("fetchMetadata", imageUrls);
 
   // バックグラウンドスクリプトにメッセージを送信
   return new Promise((resolve, reject) => {
@@ -73,6 +89,24 @@ async function fetchMetadata(imageUrls: string[]): Promise<any> {
 }
 
 /**
+ * メタデータの有無を判定
+ */
+function hasValidMetadata(metadata: any): boolean {
+  return metadata.parsed.items.length >= 2 || 
+         (metadata.parsed.items.length > 0 && metadata.parsed.items[0].keyword === 'parameters');
+}
+
+/**
+ * エラー時のメタデータを生成
+ */
+function createErrorMetadata(isNotPng: boolean = false): any {
+  return {
+    isNotPng,
+    parsed: { items: [] }
+  };
+}
+
+/**
  * 画像処理のメイン関数
  */
 async function processImage(imgElement: HTMLImageElement): Promise<void> {
@@ -83,10 +117,13 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
 
   try {
     const imgUrl = imgElement.src;
-    
+    console.log("checkedImages", checkedImages);
+
     // チェック済みリストを確認
     if (checkedImages.has(imgUrl)) {
+
       const checkedImage = checkedImages.get(imgUrl)!;
+      console.log("checkedImages に存在する", checkedImage);
       
       // メタデータがある場合はバッジを付ける
       if (checkedImage.hasMetadata) {
@@ -94,25 +131,26 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
         createBadge(imgElement);
       }
       
-      // チェック済みの場合でもパネルは表示する必要がある
+      // キャッシュされたメタデータがある場合はそれを使用
+      if(checkedImage.metadata){
+        showPanel(checkedImage.metadata);
+        return;
+      }
+
+      console.log("checkedImages にメタデータが存在しない");
+
       // ここでメタデータを再取得する必要がある
       const originalBaseUrl = checkedImage.baseUrl;
-      const originalImages: string[] = [];
+      const originalImages = prepareOriginalImageUrls(originalBaseUrl);
       
-      if (originalBaseUrl) {
-        CONFIG.IMAGE_FORMATS.forEach(format => {
-          originalImages.push(`${originalBaseUrl}.${format}`);
-        });
+      if (originalImages.length > 0) {
         
         try {
           const metadata = await fetchMetadata(originalImages);
           showPanel(metadata);
         } catch (error) {
           // エラーの場合は空のパネルを表示
-          const errorMetadata = {
-            isNotPng: false,
-            parsed: { items: [] }
-          };
+          const errorMetadata = createErrorMetadata(false);
           showPanel(errorMetadata);
         }
       }
@@ -120,16 +158,10 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
       return;
     }
     
+    console.log("checkedImages に存在しない");
     // オリジナル画像URLを取得して出力
     const originalBaseUrl = getOriginalBaseUrl(imgUrl);
-    const originalImages: string[] = [];
-    
-    if (originalBaseUrl) {
-      // 各形式のURLを出力
-      CONFIG.IMAGE_FORMATS.forEach(format => {
-        originalImages.push(`${originalBaseUrl}.${format}`);
-      });
-    }
+    const originalImages = prepareOriginalImageUrls(originalBaseUrl);
     
     // メタデータ取得
     try {
@@ -139,14 +171,14 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
       showPanel(metadata);
 
       // メタデータの有無を判定
-      const hasMetadata = metadata.parsed.items.length >= 2 || 
-                         (metadata.parsed.items.length > 0 && metadata.parsed.items[0].keyword === 'parameters');
+      const hasMetadata = hasValidMetadata(metadata);
       
       // チェック済みリストに追加
       checkedImages.set(imgUrl, {
         url: imgUrl,
         hasMetadata,
-        baseUrl: originalBaseUrl
+        baseUrl: originalBaseUrl,
+        metadata
       });
       
       // メタデータバッジを表示
@@ -158,10 +190,7 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
       // console.log('[PMV] メタデータ取得エラー:', error);
       
       // エラーの場合でもパネルを表示
-      const errorMetadata = {
-        isNotPng: false,
-        parsed: { items: [] }
-      };
+      const errorMetadata = createErrorMetadata(false);
       
       // エラーメッセージに基づいて適切なフラグを設定
       if (error instanceof Error && error.message && error.message.includes('HTTP 404')) {
@@ -175,7 +204,8 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
       checkedImages.set(imgUrl, {
         url: imgUrl,
         hasMetadata: false,
-        baseUrl: originalBaseUrl
+        baseUrl: originalBaseUrl,
+        metadata: errorMetadata
       });
     }
     
@@ -183,11 +213,7 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
     console.log('[PMV] 画像処理エラー:', error);
     
     // 画像処理エラーの場合でもパネルを表示
-    const errorMetadata = {
-      isNotPng: true,
-      parsed: { items: [] }
-    };
-    
+    const errorMetadata = createErrorMetadata(true);
     showPanel(errorMetadata);
   }
 }
@@ -221,14 +247,7 @@ async function processAllImages(imgElement: HTMLImageElement): Promise<void> {
   
   // オリジナル画像URLを取得して出力
   const originalBaseUrl = getOriginalBaseUrl(imgUrl);
-  const originalImages: string[] = [];
-  
-  if (originalBaseUrl) {
-    // 各形式のURLを出力
-    CONFIG.IMAGE_FORMATS.forEach(format => {
-      originalImages.push(`${originalBaseUrl}.${format}`);
-    });
-  }
+  const originalImages = prepareOriginalImageUrls(originalBaseUrl);
   
   try {
     // console.log("[PMV] 画像を取得:", originalImages);
@@ -236,14 +255,14 @@ async function processAllImages(imgElement: HTMLImageElement): Promise<void> {
     const metadata = await fetchMetadata(originalImages);
     
     // メタデータの有無を判定
-    const hasMetadata = metadata.parsed.items.length >= 2 || 
-                        (metadata.parsed.items.length > 0 && metadata.parsed.items[0].keyword === 'parameters');
+    const hasMetadata = hasValidMetadata(metadata);
     
     // チェック済みリストに追加
     checkedImages.set(imgUrl, {
       url: imgUrl,
       hasMetadata,
-      baseUrl: originalBaseUrl
+      baseUrl: originalBaseUrl,
+      metadata
     });
     
     // メタデータバッジを表示
@@ -257,7 +276,8 @@ async function processAllImages(imgElement: HTMLImageElement): Promise<void> {
     checkedImages.set(imgUrl, {
       url: imgUrl,
       hasMetadata: false,
-      baseUrl: originalBaseUrl
+      baseUrl: originalBaseUrl,
+      metadata: createErrorMetadata(false)
     });
   }
 }
@@ -535,10 +555,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } else {
         // パネルが非表示の場合は表示する
         // 現在のメタデータがあれば表示、なければ空のパネルを表示
-        const metadata = getCurrentMetadata() || {
-          isNotPng: false,
-          parsed: { items: [] }
-        };
+        const metadata = getCurrentMetadata() || createErrorMetadata(false);
         showPanel(metadata);
         // アイコンによって非表示にされたフラグを解除
         isPanelDisabledByIcon = false;

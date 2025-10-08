@@ -13,12 +13,26 @@ interface Settings {
   // 'disabled': 自動チェックを無効
   // 'manual': 手動ボタンを表示
   bulkCheckMode: 'auto' | 'disabled' | 'manual';
+
+  // コピー機能のショートカットキー
+  copyShortcut: {
+    ctrlKey: boolean;
+    shiftKey: boolean;
+    altKey: boolean;
+    key: string;
+  };
 }
 
 // デフォルト設定
 const DEFAULT_SETTINGS: Settings = {
   enableMetadataDisplay: true,
-  bulkCheckMode: 'auto'
+  bulkCheckMode: 'auto',
+  copyShortcut: {
+    ctrlKey: true,
+    shiftKey: true,
+    altKey: false,
+    key: 'C'
+  }
 };
 
 // 現在の設定
@@ -77,6 +91,56 @@ function applySettingsToUI(settings: Settings): void {
   if (bulkCheckModeSelect) {
     bulkCheckModeSelect.value = settings.bulkCheckMode;
   }
+
+  // ショートカット設定をUIに反映
+  const copyShortcutCtrl = document.getElementById('copyShortcutCtrl') as HTMLInputElement;
+  if (copyShortcutCtrl) {
+    copyShortcutCtrl.checked = settings.copyShortcut.ctrlKey;
+  }
+  
+  const copyShortcutShift = document.getElementById('copyShortcutShift') as HTMLInputElement;
+  if (copyShortcutShift) {
+    copyShortcutShift.checked = settings.copyShortcut.shiftKey;
+  }
+  
+  const copyShortcutAlt = document.getElementById('copyShortcutAlt') as HTMLInputElement;
+  if (copyShortcutAlt) {
+    copyShortcutAlt.checked = settings.copyShortcut.altKey;
+  }
+  
+  const copyShortcutKey = document.getElementById('copyShortcutKey') as HTMLInputElement;
+  if (copyShortcutKey) {
+    copyShortcutKey.value = settings.copyShortcut.key;
+  }
+}
+
+/**
+ * ショートカット設定を更新する
+ */
+async function updateShortcutSettings(): Promise<void> {
+  const copyShortcutCtrl = document.getElementById('copyShortcutCtrl') as HTMLInputElement;
+  const copyShortcutShift = document.getElementById('copyShortcutShift') as HTMLInputElement;
+  const copyShortcutAlt = document.getElementById('copyShortcutAlt') as HTMLInputElement;
+  const copyShortcutKey = document.getElementById('copyShortcutKey') as HTMLInputElement;
+
+  const settings = { ...currentSettings };
+  settings.copyShortcut = {
+    ctrlKey: copyShortcutCtrl?.checked || false,
+    shiftKey: copyShortcutShift?.checked || false,
+    altKey: copyShortcutAlt?.checked || false,
+    key: copyShortcutKey?.value?.toUpperCase() || 'C'
+  };
+
+  // キーが空の場合はデフォルト値を使用
+  if (!settings.copyShortcut.key) {
+    settings.copyShortcut.key = 'C';
+    if (copyShortcutKey) {
+      copyShortcutKey.value = 'C';
+    }
+  }
+
+  await saveSettings(settings);
+  await notifySettingsChange('copyShortcut', settings.copyShortcut);
 }
 
 /**
@@ -102,6 +166,41 @@ function setupEventHandlers(): void {
       settings.bulkCheckMode = bulkCheckModeSelect.value as 'auto' | 'disabled' | 'manual';
       await saveSettings(settings);
       await notifySettingsChange('bulkCheckMode', settings.bulkCheckMode);
+    });
+  }
+
+  // ショートカット設定の各要素にイベントハンドラを設定
+  const copyShortcutCtrl = document.getElementById('copyShortcutCtrl') as HTMLInputElement;
+  const copyShortcutShift = document.getElementById('copyShortcutShift') as HTMLInputElement;
+  const copyShortcutAlt = document.getElementById('copyShortcutAlt') as HTMLInputElement;
+  const copyShortcutKey = document.getElementById('copyShortcutKey') as HTMLInputElement;
+
+  if (copyShortcutCtrl) {
+    copyShortcutCtrl.addEventListener('change', updateShortcutSettings);
+  }
+  
+  if (copyShortcutShift) {
+    copyShortcutShift.addEventListener('change', updateShortcutSettings);
+  }
+  
+  if (copyShortcutAlt) {
+    copyShortcutAlt.addEventListener('change', updateShortcutSettings);
+  }
+  
+  if (copyShortcutKey) {
+    // 入力値を大文字に変換
+    copyShortcutKey.addEventListener('input', (e) => {
+      const input = e.target as HTMLInputElement;
+      input.value = input.value.toUpperCase();
+      updateShortcutSettings();
+    });
+    
+    // フォーカスが外れたときに値が空だったらデフォルト値を設定
+    copyShortcutKey.addEventListener('blur', () => {
+      if (!copyShortcutKey.value) {
+        copyShortcutKey.value = 'C';
+        updateShortcutSettings();
+      }
     });
   }
 }

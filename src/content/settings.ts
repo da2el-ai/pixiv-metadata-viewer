@@ -13,12 +13,26 @@ export interface Settings {
   // 'disabled': 自動チェックを無効
   // 'manual': 手動ボタンを表示
   bulkCheckMode: 'auto' | 'disabled' | 'manual';
+
+  // コピー機能のショートカットキー
+  copyShortcut: {
+    ctrlKey: boolean;
+    shiftKey: boolean;
+    altKey: boolean;
+    key: string;
+  };
 }
 
 // デフォルト設定
 const DEFAULT_SETTINGS: Settings = {
   enableMetadataDisplay: true,
-  bulkCheckMode: 'auto'
+  bulkCheckMode: 'auto',
+  copyShortcut: {
+    ctrlKey: true,
+    shiftKey: true,
+    altKey: false,
+    key: 'C'
+  }
 };
 
 // 現在の設定

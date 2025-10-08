@@ -4,7 +4,7 @@
  */
 import { CONFIG } from '../constants';
 import { createBadge } from './badge';
-import { showPanel, hidePanel, getCurrentMetadata } from './panel';
+import { showPanel, hidePanel, getCurrentMetadata, getPromptText, getOriginalText, copyTextToClipboard } from './panel';
 import { loadSettings, getCurrentSettings, saveSettings, Settings } from './settings';
 import { 
   CheckedImage, 
@@ -20,6 +20,7 @@ import {
 let hoverTimer: number | null = null;
 let currentTarget: HTMLImageElement | null = null;
 let isPanelDisabledByIcon = false; // アイコンによって非表示にされたかどうかのフラグ
+
 
 // checkedImagesはmetaData.tsからインポート済み
 
@@ -423,6 +424,29 @@ async function initialize(): Promise<void> {
     }
   });
 
+  // キーボードショートカット
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    const settings = getCurrentSettings();
+    const shortcut = settings.copyShortcut;
+    
+    // ショートカットキーの判定
+    if (e.ctrlKey === shortcut.ctrlKey && 
+        e.shiftKey === shortcut.shiftKey && 
+        e.altKey === shortcut.altKey && 
+        e.key.toUpperCase() === shortcut.key.toUpperCase()) {
+      
+      e.preventDefault();
+      
+      // パネルが表示されている場合のみ処理
+      const panel = document.querySelector('.d2-meta-panel[data-is-show="true"]');
+      if (panel) {
+        // プロンプトテキストをコピー
+        const text = getPromptText();
+        copyTextToClipboard(text);
+      }
+    }
+  });
+
   // // 画像マウスアウト検出
   // document.addEventListener('mouseout', (e) => {
   //   const target = e.target as HTMLElement;
@@ -454,6 +478,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       settings.enableMetadataDisplay = message.value;
     } else if (message.setting === 'bulkCheckMode') {
       settings.bulkCheckMode = message.value;
+    } else if (message.setting === 'copyShortcut') {
+      settings.copyShortcut = message.value;
     }
     
     // 設定を保存

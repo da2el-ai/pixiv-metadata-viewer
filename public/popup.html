@@ -17,13 +17,15 @@
         padding: 0;
         font-family: sans-serif;
         font-size: 1rem;
-        width: 300px;
+        width: 350px;
       }
 
       .d2-meta-settings {
+        --d2-meta-settings--gap: .8rem;
+
         display: flex;
         flex-direction: column;
-        gap: .8rem;
+        gap: var(--d2-meta-settings--gap);
         width: 100%;
         background-color: #fff;
         color: #333;
@@ -34,6 +36,11 @@
       .d2-meta-settings__item {
         display: flex;
         gap: 0.5rem;
+      }
+
+      .d2-meta-settings__item:not(:first-child) {
+        border-top: solid 1px #ddd;
+        padding-top: var(--d2-meta-settings--gap);
       }
 
       .d2-meta-settings__item.d2-meta-settings__item--horizontal {
@@ -60,6 +67,10 @@
       .d2-meta-settings__item select:focus {
         outline: none;
         border-color: #00aef1;
+      }
+
+      .d2-meta-settings__textinput{
+        padding: .2em;
       }
 
       /* スライドスイッチスタイル */
@@ -112,6 +123,11 @@
       input:checked + .slider:before {
         transform: translateX(calc(var(--switch-width) - var(--switch-size)));
       }
+
+      .l-fx{
+        display: flex;
+        column-gap: var(--l-fx--gap-x, 0);
+      }
     </style>
   </head>
   <body>
@@ -132,6 +148,45 @@
           <option value="manual">手動ボタンを表示</option>
         </select>
       </div>
+
+
+      <div class="d2-meta-settings__item d2-meta-settings__item--vertical">
+        <label>プロンプトコピーショートカット</label>
+
+        <div class="l-fx" style="column-gap:1em; --l-fx--gap-x:.3em">
+          <span class="l-fx">
+            Ctrl
+            <label class="d2-meta-settings__switch">
+              <input type="checkbox" id="copyShortcutCtrl" />
+              <span class="slider"></span>
+            </label>
+          </span>
+
+          <span class="l-fx">
+            Shift
+            <label class="d2-meta-settings__switch">
+              <input type="checkbox" id="copyShortcutShift" />
+              <span class="slider"></span>
+            </label>
+          </span>
+
+          <span class="l-fx">
+            Alt
+            <label class="d2-meta-settings__switch">
+              <input type="checkbox" id="copyShortcutAlt" />
+              <span class="slider"></span>
+            </label>
+          </span>
+
+          <span class="l-fx">
+            Key
+            <input type="text" id="copyShortcutKey" class="d2-meta-settings__textinput" style="width:2em" maxlength="1" />
+          </span>
+        </div>
+
+      </div>
+      <!-- /.d2-meta-settings__item -->
+
     </div>
 
     <script src="popup.js"></script>

@@ -5,10 +5,40 @@
 import { CONFIG } from '../constants';
 import { escapeHtml } from './utils';
 import { extractSummary } from './parsePrompt';
+import { getCurrentSettings } from './settings';
 
 // 状態管理
 let currentMetadata: any = null;
 let hideTimer: number | null = null;
+
+/**
+ * テキストをクリップボードにコピーする
+ */
+export function copyTextToClipboard(text: string): void {
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      console.log('[PMV] テキストをクリップボードにコピーしました');
+    })
+    .catch(err => {
+      console.error('[PMV] クリップボードへのコピーに失敗しました', err);
+    });
+}
+
+/**
+ * プロンプトテキストエリアからテキスト抽出
+ */
+export function getPromptText(): string {
+  const promptTextArea = document.querySelector('.d2-meta-panel__prompt .d2-meta-panel__text');
+  return promptTextArea ? (promptTextArea as HTMLElement).innerText || '' : '';
+}
+
+/**
+ * オリジナルテキストエリアからテキスト抽出
+ */
+export function getOriginalText(): string {
+  const originalTextArea = document.querySelector('.d2-meta-panel__original .d2-meta-panel__text');
+  return originalTextArea ? (originalTextArea as HTMLElement).innerText || '' : '';
+}
 
 /**
  * メタデータパネルを作成
@@ -77,12 +107,44 @@ function createPanel(): HTMLElement {
   promptSection.className = 'd2-meta-panel__prompt';
   promptSection.style.backgroundColor = '#444';
   content.appendChild(promptSection);
-  
+
+  // プロンプトコピーボタン
+  const promptCopyButton = document.createElement('button');
+  promptCopyButton.classList.add('d2-meta-panel__copy-btn');
+  promptCopyButton.textContent = 'COPY';
+  promptCopyButton.title = 'プロンプトをコピー';
+  promptCopyButton.addEventListener('click', () => {
+    const text = getPromptText();
+    copyTextToClipboard(text);
+  });
+  promptSection.appendChild(promptCopyButton);
+
+  // プロンプトテキスト枠
+  const promptTextArea = document.createElement('div');
+  promptTextArea.className = 'd2-meta-panel__text';
+  promptSection.appendChild(promptTextArea);
+
   // オリジナル部分
   const originalSection = document.createElement('div');
   originalSection.className = 'd2-meta-panel__original';
   originalSection.style.backgroundColor = '#444';
   content.appendChild(originalSection);
+
+  // オリジナルコピーボタン
+  const originalCopyButton = document.createElement('button');
+  originalCopyButton.classList.add('d2-meta-panel__copy-btn');
+  originalCopyButton.textContent = 'COPY';
+  originalCopyButton.title = 'オリジナルメタデータをコピー';
+  originalCopyButton.addEventListener('click', () => {
+    const text = getOriginalText();
+    copyTextToClipboard(text);
+  });
+  originalSection.appendChild(originalCopyButton);
+
+  // オリジナルテキスト枠
+  const originalTextArea = document.createElement('div');
+  originalTextArea.className = 'd2-meta-panel__text';
+  originalSection.appendChild(originalTextArea);
 
   // リサイズハンドル：下
   const resizeHandleBottom = document.createElement('div');
@@ -141,10 +203,10 @@ function createPanel(): HTMLElement {
  * パネルのコンテンツを描画
  */
 function renderPanelContent(panel: HTMLElement, metadata: any): void {
-  const promptSection = panel.querySelector('.d2-meta-panel__prompt');
-  const originalSection = panel.querySelector('.d2-meta-panel__original');
+  const promptTextArea = panel.querySelector('.d2-meta-panel__prompt .d2-meta-panel__text');
+  const originalTextArea = panel.querySelector('.d2-meta-panel__original .d2-meta-panel__text');
   
-  if (!promptSection || !originalSection) return;
+  if (!promptTextArea || !originalTextArea) return;
   
   // メタデータが見つかるかどうかを判定
   const hasMetadata = metadata.parsed && metadata.parsed.items && metadata.parsed.items.length > 0;
@@ -154,8 +216,8 @@ function renderPanelContent(panel: HTMLElement, metadata: any): void {
   
   // PNG以外の形式の場合
   if (metadata.isNotPng) {
-    promptSection.innerHTML = '<p>PNG以外の画像形式のため、メタデータは表示されません。</p>';
-    originalSection.innerHTML = '';
+    promptTextArea.innerHTML = '<p>PNG以外の画像形式のため、メタデータは表示されません。</p>';
+    originalTextArea.innerHTML = '';
     return;
   }
   
@@ -185,8 +247,8 @@ function renderPanelContent(panel: HTMLElement, metadata: any): void {
   if (summary.software) paramsHtml += `<li>Software: ${escapeHtml(summary.software)}</li>`;
   paramsHtml += '</ul>';
   
-  promptSection.innerHTML = promptHtml || '<p>プロンプト情報が見つかりませんでした。</p>';
-  originalSection.innerHTML = paramsHtml;
+  promptTextArea.innerHTML = promptHtml || '<p>プロンプト情報が見つかりませんでした。</p>';
+  originalTextArea.innerHTML = paramsHtml;
   
   // オリジナルデータ
   if (metadata.parsed && metadata.parsed.items && metadata.parsed.items.length > 0) {
@@ -195,7 +257,7 @@ function renderPanelContent(panel: HTMLElement, metadata: any): void {
       originalHtml += `<li><strong>${escapeHtml(item.keyword)}</strong>: <span style="white-space: pre-wrap;">${escapeHtml(item.text)}</span></li>`;
     });
     originalHtml += '</ul>';
-    originalSection.innerHTML += originalHtml;
+    originalTextArea.innerHTML += originalHtml;
   }
 }
 

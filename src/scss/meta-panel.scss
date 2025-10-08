@@ -18,7 +18,7 @@
     display: flex;
   }
 
-  &[data-position="top"]{
+  &[data-position="top"] {
     bottom: auto;
     top: 0;
   }
@@ -42,10 +42,10 @@
     background-color: #555;
   }
 
-  .d2-meta-panel[data-position="top"] &.d2-meta-panel__resize--top{
+  .d2-meta-panel[data-position="top"] &.d2-meta-panel__resize--top {
     display: none;
   }
-  .d2-meta-panel[data-position="bottom"] &.d2-meta-panel__resize--bottom{
+  .d2-meta-panel[data-position="bottom"] &.d2-meta-panel__resize--bottom {
     display: none;
   }
 }
@@ -54,11 +54,11 @@
 .d2-meta-panel__nav-container {
   display: flex;
   justify-content: flex-end;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 // ボタンエリアのボタン
-.d2-meta-panel__nav-btn{
+.d2-meta-panel__nav-btn {
   position: relative;
   width: fit-content;
   padding: 0.3em;
@@ -76,7 +76,7 @@
 
 // 位置変更ボタン
 .d2-meta-panel__nav-btn--position {
-  &:before{
+  &:before {
     content: "▲";
   }
 
@@ -84,7 +84,6 @@
     content: "▼";
   }
 }
-
 
 .d2-meta-panel__layout {
   flex: 1 1 auto;
@@ -103,4 +102,21 @@
   border-radius: 0.2em;
   font-size: 1rem;
   line-height: 1.4;
+}
+
+// コピーボタン
+.d2-meta-panel__copy-btn {
+  background-color: #888888;
+  border: solid 1px #aaa;
+  border-radius: 4px;
+  padding: 0.5em 1em;
+  margin-left: auto;
+  display: block;
+  color: #fff;
+  transition: .3s;
+
+  &:hover{
+    background-color: #1a1a1a;
+    border: solid 1px #fff;
+  }
 }

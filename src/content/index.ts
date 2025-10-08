@@ -133,7 +133,7 @@ async function processImage(imgElement: HTMLImageElement): Promise<void> {
     }
     
   } catch (error) {
-    console.log('[PMV] 画像処理エラー:', error);
+    // console.log('[PMV] 画像処理エラー:', error);
     
     // 画像処理エラーの場合でもパネルを表示
     const errorMetadata = createErrorMetadata(true);
@@ -176,6 +176,7 @@ async function processAllImages(imgElement: HTMLImageElement): Promise<void> {
     // console.log("[PMV] 画像を取得:", originalImages);
     // メタデータ取得
     const metadata = await fetchMetadata(originalImages);
+    // console.log("[PMV]", metadata);
     
     // メタデータの有無を判定
     const hasMetadata = hasValidMetadata(metadata);
@@ -211,7 +212,7 @@ async function processAllImages(imgElement: HTMLImageElement): Promise<void> {
  * ページ内の画像をチェックしてバッジを付ける
  */
 function checkImagesAndAddBadges(): void {
-  const topSideMenuImages = document.querySelectorAll('.__top_side_menu_body img');
+  const topSideMenuImages = document.querySelectorAll('.__top_side_menu_body img, .ranking-items img');
 
   topSideMenuImages.forEach(imgElement => {
     const imgUrl = (imgElement as HTMLImageElement).src;
@@ -299,7 +300,7 @@ function setupMutationObserver(): void {
   // bodyの変更を監視開始
   observer.observe(document.body, config);
   
-  console.log("[PMV] MutationObserver設定完了");
+  // console.log("[PMV] MutationObserver設定完了");
 }
 
 /**
@@ -309,7 +310,7 @@ function disableMutationObserver(): void {
   if (observer) {
     observer.disconnect();
     observer = null;
-    console.log("[PMV] MutationObserver無効化");
+    // console.log("[PMV] MutationObserver無効化");
   }
 }
 
@@ -365,7 +366,7 @@ function hideCheckButton(): void {
  * 初期化
  */
 async function initialize(): Promise<void> {
-  console.log("[PMV] initialize");
+  // console.log("[PMV] initialize");
 
   // 設定を読み込む
   await loadSettings();
@@ -386,13 +387,13 @@ async function initialize(): Promise<void> {
     // 全画像一括チェックの設定に応じた処理
     if (settings.bulkCheckMode === 'disabled') {
       // 自動チェックを無効化
-      console.log("[PMV] 自動チェック無効モード");
+      // console.log("[PMV] 自動チェック無効モード");
     } else if (settings.bulkCheckMode === 'manual') {
       // 手動ボタンを表示
-      console.log("[PMV] 手動チェックモード");
+      // console.log("[PMV] 手動チェックモード");
     } else {
       // 自動でチェック（デフォルト）
-      console.log("[PMV] 自動チェックモード");
+      // console.log("[PMV] 自動チェックモード");
       checkImagesAndAddBadges();
       // 初回チェック後にMutationObserverを設定
       setupMutationObserver();

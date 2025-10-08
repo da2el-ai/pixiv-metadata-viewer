@@ -2,67 +2,10 @@
  * ポップアップスクリプト
  * 設定パネルの動作を担当
  */
+import { Settings, loadSettings, saveSettings, getCurrentSettings } from '../shared/settings';
 
-// 設定の型定義
-interface Settings {
-  // メタデータ表示機能の有効/無効
-  enableMetadataDisplay: boolean;
-  
-  // 全画像一括チェックの設定
-  // 'auto': 自動でチェック
-  // 'disabled': 自動チェックを無効
-  // 'manual': 手動ボタンを表示
-  bulkCheckMode: 'auto' | 'disabled' | 'manual';
-
-  // コピー機能のショートカットキー
-  copyShortcut: {
-    ctrlKey: boolean;
-    shiftKey: boolean;
-    altKey: boolean;
-    key: string;
-  };
-}
-
-// デフォルト設定
-const DEFAULT_SETTINGS: Settings = {
-  enableMetadataDisplay: true,
-  bulkCheckMode: 'auto',
-  copyShortcut: {
-    ctrlKey: true,
-    shiftKey: true,
-    altKey: false,
-    key: 'C'
-  }
-};
-
-// 現在の設定
-let currentSettings: Settings = { ...DEFAULT_SETTINGS };
-
-/**
- * 設定を読み込む
- */
-async function loadSettings(): Promise<Settings> {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get('settings', (result) => {
-      if (result.settings) {
-        currentSettings = { ...DEFAULT_SETTINGS, ...result.settings };
-      }
-      resolve(currentSettings);
-    });
-  });
-}
-
-/**
- * 設定を保存する
- */
-async function saveSettings(settings: Settings): Promise<void> {
-  return new Promise((resolve) => {
-    chrome.storage.sync.set({ settings }, () => {
-      currentSettings = settings;
-      resolve();
-    });
-  });
-}
+// 現在の設定（ローカルキャッシュ）
+let currentSettings: Settings;
 
 /**
  * 現在のタブに設定変更を通知する
@@ -139,7 +82,10 @@ async function updateShortcutSettings(): Promise<void> {
     }
   }
 
+  // 設定を保存
   await saveSettings(settings);
+  // 現在の設定を更新
+  currentSettings = settings;
   await notifySettingsChange('copyShortcut', settings.copyShortcut);
 }
 
@@ -154,6 +100,8 @@ function setupEventHandlers(): void {
       const settings = { ...currentSettings };
       settings.enableMetadataDisplay = enableMetadataDisplayCheckbox.checked;
       await saveSettings(settings);
+      // 現在の設定を更新
+      currentSettings = settings;
       await notifySettingsChange('enableMetadataDisplay', settings.enableMetadataDisplay);
     });
   }
@@ -165,6 +113,8 @@ function setupEventHandlers(): void {
       const settings = { ...currentSettings };
       settings.bulkCheckMode = bulkCheckModeSelect.value as 'auto' | 'disabled' | 'manual';
       await saveSettings(settings);
+      // 現在の設定を更新
+      currentSettings = settings;
       await notifySettingsChange('bulkCheckMode', settings.bulkCheckMode);
     });
   }
@@ -210,7 +160,7 @@ function setupEventHandlers(): void {
  */
 async function initialize(): Promise<void> {
   // 設定を読み込む
-  await loadSettings();
+  currentSettings = await loadSettings();
   
   // 設定をUIに適用
   applySettingsToUI(currentSettings);
